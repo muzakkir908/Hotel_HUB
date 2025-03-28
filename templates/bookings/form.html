@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Your Stay - HotelHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Book Your Stay</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hotel Information</h5>
+                </div>
+                <div class="card-body">
+                    <h4>{{ hotel.name }}</h4>
+                    <p><strong>Address:</strong> {{ hotel.address }}</p>
+                    <p>{{ hotel.description }}</p>
+                    
+                    {% if room %}
+                        <h5 class="mt-3">{{ room.name }}</h5>
+                        <p><strong>Room Type:</strong> {{ room.get_room_type_display }}</p>
+                        <p><strong>Max Guests:</strong> {{ room.capacity }}</p>
+                        <p><strong>Price:</strong> ${{ room.price_per_night }} per night</p>
+                    {% else %}
+                        <p><strong>Price:</strong> ${{ hotel.price_per_night }} per night</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Booking Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="check_in" class="form-label">Check-in Date</label>
+                            <input type="date" class="form-control" id="check_in" name="check_in" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="check_out" class="form-label">Check-out Date</label>
+                            <input type="date" class="form-control" id="check_out" name="check_out" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="guests" class="form-label">Number of Guests</label>
+                            <input type="number" class="form-control" id="guests" name="guests" min="1" 
+                                {% if room %}max="{{ room.capacity }}"{% endif %} value="1" required>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Price Summary</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Price per night:</span>
+                                    <span>${{ room.price_per_night|default:hotel.price_per_night }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2" id="nights-row">
+                                    <span>Nights:</span>
+                                    <span>0</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total:</span>
+                                    <span id="total-price">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Confirm Booking</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkInInput = document.getElementById('check_in');
+        const checkOutInput = document.getElementById('check_out');
+        const nightsRow = document.getElementById('nights-row');
+        const totalPrice = document.getElementById('total-price');
+        const pricePerNight = {{ room.price_per_night|default:hotel.price_per_night }};
+        
+        // Set minimum dates
+        const today = new Date().toISOString().split('T')[0];
+        checkInInput.min = today;
+        
+        function updatePrice() {
+            if (checkInInput.value && checkOutInput.value) {
+                const checkInDate = new Date(checkInInput.value);
+                const checkOutDate = new Date(checkOutInput.value);
+                
+                // Calculate days difference
+                const timeDiff = checkOutDate - checkInDate;
+                const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                
+                if (nights > 0) {
+                    const total = nights * pricePerNight;
+                    nightsRow.innerHTML = `<span>Nights (${nights}):</span><span>$${pricePerNight} × ${nights}</span>`;
+                    totalPrice.textContent = `$${total.toFixed(2)}`;
+                } else {
+                    nightsRow.innerHTML = `<span>Nights:</span><span>0</span>`;
+                    totalPrice.textContent = '$0.00';
+                }
+            }
+        }
+        
+        checkInInput.addEventListener('change', function() {
+            // Set check-out min date to be the day after check-in
+            const checkInDate = new Date(this.value);
+            const nextDay = new Date(checkInDate);
+            nextDay.setDate(checkInDate.getDate() + 1);
+            checkOutInput.min = nextDay.toISOString().split('T')[0];
+            
+            // Clear check-out if it's now invalid
+            if (checkOutInput.value && new Date(checkOutInput.value) <= checkInDate) {
+                checkOutInput.value = '';
+            }
+            
+            updatePrice();
+        });
+        
+        checkOutInput.addEventListener('change', updatePrice);
+    });
+</script>
+{% endblock %}
+{% endblock %}

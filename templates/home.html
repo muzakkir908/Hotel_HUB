@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to HotelHub{% endblock %}
+
+{% block content %}
+<div class="bg-primary text-white py-5 mb-4">
+    <div class="container text-center">
+        <h1 class="display-4">Find Your Perfect Stay</h1>
+        <p class="lead">Book hotels at the best prices with HotelHub</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'hotel_list' %}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="location" class="form-label">Where do you want to stay?</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="City, address, or landmark">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="check_in" class="form-label">Check-in</label>
+                        <input type="date" class="form-control" id="check_in" name="check_in">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="check_out" class="form-label">Check-out</label>
+                        <input type="date" class="form-control" id="check_out" name="check_out">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Search Hotels</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Featured Hotels -->
+    <h2 class="text-center mb-4">Featured Hotels</h2>
+    <div class="row">
+        {% for hotel in featured_hotels %}
+        <div class="col-md-4 mb-4">
+            <div class="card hotel-card h-100">
+                {% if hotel.image %}
+                    <img src="{{ hotel.image.url }}" class="card-img-top" alt="{{ hotel.name }}">
+                {% else %}
+                    <div class="bg-light text-center p-5 card-img-top">No Image Available</div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ hotel.name }}</h5>
+                    <p class="card-text text-truncate">{{ hotel.address }}</p>
+                    <p class="card-text fw-bold">${{ hotel.price_per_night }} per night</p>
+                    <a href="{% url 'hotel_detail' hotel.id %}" class="btn btn-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">No featured hotels available at the moment.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Map of Hotels -->
+    <div class="card mt-4 mb-4">
+        <div class="card-body">
+            <h3 class="card-title text-center mb-3">Our Hotels Locations</h3>
+            <div id="map" style="height: 400px; width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Set up date validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const checkInInput = document.getElementById('check_in');
+        const checkOutInput = document.getElementById('check_out');
+        
+        checkInInput.min = today;
+        
+        checkInInput.addEventListener('change', function() {
+            const checkInDate = new Date(this.value);
+            const nextDay = new Date(checkInDate);
+            nextDay.setDate(checkInDate.getDate() + 1);
+            checkOutInput.min = nextDay.toISOString().split('T')[0];
+            
+            if (checkOutInput.value && new Date(checkOutInput.value) <= checkInDate) {
+                checkOutInput.value = '';
+            }
+        });
+    });
+    
+    // Google Maps integration
+    function initMap() {
+        const map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 10,
+            center: {lat: 0, lng: 0}
+        });
+        
+        const hotels = [
+            {% for hotel in featured_hotels %}
+                {
+                    id: {{ hotel.id }},
+                    name: "{{ hotel.name }}",
+                    lat: {{ hotel.latitude }},
+                    lng: {{ hotel.longitude }},
+                    price: "{{ hotel.price_per_night }}"
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        const bounds = new google.maps.LatLngBounds();
+        
+        // Add markers for hotels
+        hotels.forEach(hotel => {
+            const position = {lat: hotel.lat, lng: hotel.lng};
+            const marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: hotel.name
+            });
+            
+            bounds.extend(position);
+            
+            // Add info window
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div style="width: 200px;">
+                        <h5>${hotel.name}</h5>
+                        <p><strong>$${hotel.price}</strong> per night</p>
+                        <a href="/hotels/${hotel.id}/" class="btn btn-

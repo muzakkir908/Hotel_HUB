@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Hotels - HotelHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Our Hotels</h1>
+    
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'hotel_list' %}">
+                <div class="row">
+                    <div class="col-md-10">
+                        <label for="location" class="form-label">Search by Location</label>
+                        <input type="text" class="form-control" id="location" name="location" value="{{ location_search }}" placeholder="City, address, or landmark">
+                    </div>
+                    <div class="col-md-2 align-self-end">
+                        <button type="submit" class="btn btn-primary w-100">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Hotel Listings -->
+    <div class="row">
+        {% for hotel in hotels %}
+        <div class="col-md-4 mb-4">
+            <div class="card hotel-card h-100">
+                {% if hotel.image %}
+                    <img src="{{ hotel.image.url }}" class="card-img-top" alt="{{ hotel.name }}">
+                {% else %}
+                    <div class="bg-light text-center p-5 card-img-top">No Image Available</div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ hotel.name }}</h5>
+                    <p class="card-text text-truncate">{{ hotel.address }}</p>
+                    <p class="card-text fw-bold">${{ hotel.price_per_night }} per night</p>
+                    <a href="{% url 'hotel_detail' hotel.id %}" class="btn btn-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No hotels found matching your criteria. Please try a different search.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
