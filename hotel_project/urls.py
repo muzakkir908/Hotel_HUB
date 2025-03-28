@@ -24,6 +24,7 @@ from hotels.views import home, hotel_list, hotel_detail
 from hotels.api_views import HotelViewSet, RoomViewSet
 from bookings.views import booking_list, create_booking, booking_confirmation, generate_booking_pdf, submit_review
 from bookings.api_views import BookingViewSet, ReviewViewSet
+from hotel_project.health_check import health_check
 
 # Create a router for REST API endpoints
 router = DefaultRouter()
@@ -35,6 +36,7 @@ router.register(r'reviews', ReviewViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
+    path('health/', health_check, name='health_check'),  # Health check endpoint
     path('hotels/', hotel_list, name='hotel_list'),
     path('hotels/<int:hotel_id>/', hotel_detail, name='hotel_detail'),
     path('submit-review/<int:hotel_id>/', submit_review, name='submit_review'),
