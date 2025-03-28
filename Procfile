@@ -1,1 +1,1 @@
-web: gunicorn hotel_project.wsgi --log-file -
+web: gunicorn hotel_project.wsgi:application --bind 0.0.0.0:8000
