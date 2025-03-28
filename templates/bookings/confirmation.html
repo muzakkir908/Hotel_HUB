@@ -1,0 +1,438 @@
+{% extends 'base.html' %}
+
+{% block title %}Booking Confirmation - HotelHub{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirmation-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .confirmation-icon {
+        font-size: 4rem;
+        color: #2ecc71;
+        margin-bottom: 1rem;
+    }
+    
+    .booking-status {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 30px;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+    
+    .status-confirmed {
+        background-color: rgba(46, 204, 113, 0.15);
+        color: #2ecc71;
+    }
+    
+    .status-pending {
+        background-color: rgba(243, 156, 18, 0.15);
+        color: #f39c12;
+    }
+    
+    .booking-info {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    .booking-section {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .booking-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .booking-section-title {
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--primary-color);
+    }
+    
+    .booking-detail {
+        display: flex;
+        margin-bottom: 12px;
+    }
+    
+    .booking-detail-label {
+        min-width: 140px;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .booking-detail-value {
+        flex-grow: 1;
+        word-break: break-word;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .qr-code {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+    
+    .confirmation-tips {
+        background-color: #f3f7fc;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 2rem;
+    }
+    
+    .tip-icon {
+        font-size: 1.5rem;
+        color: var(--secondary-color);
+        margin-right: 15px;
+    }
+    
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    
+    .tip-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .tip-content {
+        flex-grow: 1;
+    }
+    
+    .tip-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .tip-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Confirmation Header -->
+                    <div class="confirmation-header">
+                        <div class="confirmation-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h1 class="h3 mb-3">Booking Confirmed!</h1>
+                        <div class="booking-status status-{{ booking.status }}">
+                            <i class="fas {% if booking.status == 'confirmed' %}fa-check-circle{% elif booking.status == 'pending' %}fa-clock{% endif %} me-2"></i>
+                            {{ booking.get_status_display }}
+                        </div>
+                        <p class="text-muted">Thank you for your reservation. Your booking has been successfully confirmed.</p>
+                        
+                        <div class="qr-code">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BOOKING{{ booking.id }}" alt="Booking QR Code">
+                            <div class="mt-2 text-muted small">Booking #{{ booking.id }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Booking Information -->
+                    <div class="booking-info">
+                        <!-- Hotel Details -->
+                        <div class="booking-section">
+                            <h2 class="booking-section-title">
+                                <i class="fas fa-hotel me-2"></i> Hotel Information
+                            </h2>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Hotel:</div>
+                                <div class="booking-detail-value">{{ booking.hotel.name }}</div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Address:</div>
+                                <div class="booking-detail-value">{{ booking.hotel.address }}</div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Contact:</div>
+                                <div class="booking-detail-value">+1 (555) 123-4567</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Room Details -->
+                        <div class="booking-section">
+                            <h2 class="booking-section-title">
+                                <i class="fas fa-bed me-2"></i> Room Details
+                            </h2>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Room Type:</div>
+                                <div class="booking-detail-value">
+                                    {% if booking.room %}
+                                        {{ booking.room.name }} ({{ booking.room.get_room_type_display }})
+                                    {% else %}
+                                        Standard Room
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Number of Guests:</div>
+                                <div class="booking-detail-value">{{ booking.guests }}</div>
+                            </div>
+                            {% if booking.room %}
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Room Amenities:</div>
+                                <div class="booking-detail-value">
+                                    <div class="room-amenities">
+                                        <span class="room-amenity"><i class="fas fa-wifi me-1"></i> WiFi</span>
+                                        <span class="room-amenity"><i class="fas fa-tv me-1"></i> TV</span>
+                                        <span class="room-amenity"><i class="fas fa-bath me-1"></i> Private Bathroom</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Stay Details -->
+                        <div class="booking-section">
+                            <h2 class="booking-section-title">
+                                <i class="fas fa-calendar-alt me-2"></i> Stay Details
+                            </h2>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Check-in:</div>
+                                <div class="booking-detail-value">{{ booking.check_in|date:"l, F j, Y" }} (after 2:00 PM)</div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Check-out:</div>
+                                <div class="booking-detail-value">{{ booking.check_out|date:"l, F j, Y" }} (before 12:00 PM)</div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Duration:</div>
+                                <div class="booking-detail-value">
+                                    {% with nights=booking.check_out|timeuntil:booking.check_in|cut:" days, 0:00:00"|add:"0" %}
+                                        {{ nights }} night{{ nights|pluralize }}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Details -->
+                        <div class="booking-section">
+                            <h2 class="booking-section-title">
+                                <i class="fas fa-credit-card me-2"></i> Payment Information
+                            </h2>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Total Price:</div>
+                                <div class="booking-detail-value">${{ booking.total_price }}</div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Payment Status:</div>
+                                <div class="booking-detail-value">
+                                    <span class="badge bg-success">Paid</span>
+                                </div>
+                            </div>
+                            <div class="booking-detail">
+                                <div class="booking-detail-label">Invoice ID:</div>
+                                <div class="booking-detail-value">
+                                    {% if booking.invoice_id %}
+                                        {{ booking.invoice_id }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <a href="{% url 'generate_booking_pdf' booking.id %}?download=true" class="btn btn-primary flex-grow-1">
+                            <i class="fas fa-download me-2"></i> Download Confirmation
+                        </a>
+                        <a href="{% url 'generate_booking_pdf' booking.id %}?email=true" class="btn btn-outline-primary flex-grow-1">
+                            <i class="fas fa-envelope me-2"></i> Email Confirmation
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hotel Location Map -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Location</h2>
+                    <div id="map" style="height: 300px; border-radius: 10px;"></div>
+                </div>
+            </div>
+            
+            <!-- Travel Tips -->
+            <div class="confirmation-tips">
+                <h3 class="h5 mb-4">Helpful Information</h3>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="tip-content">
+                        <div class="tip-title">Check-in Information</div>
+                        <div class="tip-description">
+                            Standard check-in time is from 2:00 PM. Early check-in may be available upon request, subject to availability.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="tip-content">
+                        <div class="tip-title">Parking Information</div>
+                        <div class="tip-description">
+                            The hotel offers valet parking for $25 per day. Self-parking is also available at nearby public garages.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="tip-content">
+                        <div class="tip-title">Dining Options</div>
+                        <div class="tip-description">
+                            The hotel restaurant is open from 6:30 AM to 10:30 PM daily. Room service is available during these hours.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tip-item">
+                    <div class="tip-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="tip-content">
+                        <div class="tip-title">Cancellation Policy</div>
+                        <div class="tip-description">
+                            Free cancellation until 24 hours before check-in. After that, a one-night charge may apply.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="{% url 'booking_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to My Bookings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Google Maps integration
+    function initMap() {
+        const hotelLocation = {
+            lat: {{ booking.hotel.latitude }},
+            lng: {{ booking.hotel.longitude }}
+        };
+        
+        const map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 15,
+            center: hotelLocation,
+            styles: [
+                {
+                    "featureType": "administrative",
+                    "elementType": "labels.text.fill",
+                    "stylers": [{"color": "#444444"}]
+                },
+                {
+                    "featureType": "landscape",
+                    "elementType": "all",
+                    "stylers": [{"color": "#f2f2f2"}]
+                },
+                {
+                    "featureType": "poi",
+                    "elementType": "all",
+                    "stylers": [{"visibility": "off"}]
+                },
+                {
+                    "featureType": "road",
+                    "elementType": "all",
+                    "stylers": [{"saturation": -100}, {"lightness": 45}]
+                },
+                {
+                    "featureType": "road.highway",
+                    "elementType": "all",
+                    "stylers": [{"visibility": "simplified"}]
+                },
+                {
+                    "featureType": "road.arterial",
+                    "elementType": "labels.icon",
+                    "stylers": [{"visibility": "off"}]
+                },
+                {
+                    "featureType": "transit",
+                    "elementType": "all",
+                    "stylers": [{"visibility": "off"}]
+                },
+                {
+                    "featureType": "water",
+                    "elementType": "all",
+                    "stylers": [{"color": "#3498db"}, {"visibility": "on"}]
+                }
+            ]
+        });
+        
+        // Custom marker icon
+        const markerIcon = {
+            path: 'M12,2C8.13,2,5,5.13,5,9c0,5.25,7,13,7,13s7-7.75,7-13C19,5.13,15.87,2,12,2z M12,11.5c-1.38,0-2.5-1.12-2.5-2.5s1.12-2.5,2.5-2.5s2.5,1.12,2.5,2.5S13.38,11.5,12,11.5z',
+            fillColor: '#3498db',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            scale: 1.5,
+            anchor: new google.maps.Point(12, 22)
+        };
+        
+        const marker = new google.maps.Marker({
+            position: hotelLocation,
+            map: map,
+            title: "{{ booking.hotel.name }}",
+            icon: markerIcon,
+            animation: google.maps.Animation.DROP
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div style="width: 200px; padding: 10px;">
+                    <h5 style="margin-top: 0; color: #2c3e50; font-weight: bold;">{{ booking.hotel.name }}</h5>
+                    <p style="margin-bottom: 8px;">{{ booking.hotel.address }}</p>
+                </div>
+            `
+        });
+        
+        marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+        });
+        
+        // Open by default
+        infoWindow.open(map, marker);
+    }
+</script>
+
+<!-- Load Google Maps API -->
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
+</script>
+{% endblock %}
+{% endblock %}

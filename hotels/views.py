@@ -31,6 +31,15 @@ def hotel_detail(request, hotel_id):
     # Get reviews for this hotel from our database
     reviews = Review.objects.filter(hotel_id=hotel_id)
     
+    # Handle sorting
+    sort = request.GET.get('sort', 'newest')
+    if sort == 'newest':
+        reviews = reviews.order_by('-created_at')
+    elif sort == 'highest':
+        reviews = reviews.order_by('-rating')
+    elif sort == 'lowest':
+        reviews = reviews.order_by('rating')
+    
     # Calculate average rating
     avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     

@@ -1,77 +1,307 @@
 {% extends 'base.html' %}
 
-{% block title %}Book Your Stay - HotelHub{% endblock %}
+{% block title %}Book Your Stay at {{ hotel.name }} - HotelHub{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-summary {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        position: sticky;
+        top: 100px;
+    }
+    
+    .price-breakdown {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .price-row.total {
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .hotel-image {
+        border-radius: 10px;
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .hotel-info {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .date-picker {
+        position: relative;
+    }
+    
+    .booking-details-row {
+        margin-bottom: 15px;
+        display: flex;
+        border-bottom: 1px dashed #e9ecef;
+        padding-bottom: 15px;
+    }
+    
+    .booking-details-icon {
+        margin-right: 15px;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(52, 152, 219, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--secondary-color);
+        font-size: 1.2rem;
+    }
+    
+    .booking-details-content {
+        flex: 1;
+    }
+    
+    .booking-details-label {
+        font-weight: 500;
+        margin-bottom: 3px;
+    }
+    
+    .booking-details-value {
+        color: #6c757d;
+    }
+    
+    .guarantee-badge {
+        background-color: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .guarantee-badge i {
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">Book Your Stay</h1>
-
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-lg-8">
+            <!-- Hotel information -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Hotel Information</h5>
-                </div>
                 <div class="card-body">
-                    <h4>{{ hotel.name }}</h4>
-                    <p><strong>Address:</strong> {{ hotel.address }}</p>
-                    <p>{{ hotel.description }}</p>
-                    
-                    {% if room %}
-                        <h5 class="mt-3">{{ room.name }}</h5>
-                        <p><strong>Room Type:</strong> {{ room.get_room_type_display }}</p>
-                        <p><strong>Max Guests:</strong> {{ room.capacity }}</p>
-                        <p><strong>Price:</strong> ${{ room.price_per_night }} per night</p>
-                    {% else %}
-                        <p><strong>Price:</strong> ${{ hotel.price_per_night }} per night</p>
-                    {% endif %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if hotel.image %}
+                                <img src="{{ hotel.image.url }}" alt="{{ hotel.name }}" class="hotel-image img-fluid">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center hotel-image">
+                                    <i class="fas fa-hotel fa-3x text-secondary"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h1 class="h4 mb-2">{{ hotel.name }}</h1>
+                            <p class="text-muted mb-3">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ hotel.address }}
+                            </p>
+                            <div class="star-rating mb-3">
+                                {% for i in "12345" %}
+                                    <span class="{% if forloop.counter <= 4 %}filled{% endif %}">★</span>
+                                {% endfor %}
+                            </div>
+                            <p>{{ hotel.description|truncatewords:30 }}</p>
+                            <a href="{% url 'hotel_detail' hotel.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Hotel Details
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-6">
+            
+            <!-- Room information if present -->
+            {% if room %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Selected Room</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if room.image %}
+                                <img src="{{ room.image.url }}" alt="{{ room.name }}" class="hotel-image img-fluid">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center hotel-image">
+                                    <i class="fas fa-bed fa-3x text-secondary"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h3 class="h5 mb-2">{{ room.name }}</h3>
+                                <span class="badge bg-primary">{{ room.get_room_type_display }}</span>
+                            </div>
+                            <p class="text-muted small mb-2">
+                                <i class="fas fa-user-friends me-1"></i> Up to {{ room.capacity }} guests
+                            </p>
+                            <div class="room-amenities mb-3">
+                                <span class="room-amenity"><i class="fas fa-wifi me-1"></i> Free WiFi</span>
+                                <span class="room-amenity"><i class="fas fa-tv me-1"></i> Flat-screen TV</span>
+                                <span class="room-amenity"><i class="fas fa-bath me-1"></i> Private bathroom</span>
+                            </div>
+                            <p>{{ room.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Booking Form -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Booking Details</h5>
+                    <h2 class="h5 mb-0">Booking Details</h2>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="check_in" class="form-label">Check-in Date</label>
-                            <input type="date" class="form-control" id="check_in" name="check_in" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="check_out" class="form-label">Check-out Date</label>
-                            <input type="date" class="form-control" id="check_out" name="check_out" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="guests" class="form-label">Number of Guests</label>
-                            <input type="number" class="form-control" id="guests" name="guests" min="1" 
-                                {% if room %}max="{{ room.capacity }}"{% endif %} value="1" required>
-                        </div>
-                        
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-title">Price Summary</h6>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Price per night:</span>
-                                    <span>${{ room.price_per_night|default:hotel.price_per_night }}</span>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="check_in" class="form-label">Check-in Date</label>
+                                <div class="input-group date-picker">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="date" class="form-control" id="check_in" name="check_in" required>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2" id="nights-row">
-                                    <span>Nights:</span>
-                                    <span>0</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="check_out" class="form-label">Check-out Date</label>
+                                <div class="input-group date-picker">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="date" class="form-control" id="check_out" name="check_out" required>
                                 </div>
-                                <hr>
-                                <div class="d-flex justify-content-between fw-bold">
-                                    <span>Total:</span>
-                                    <span id="total-price">$0.00</span>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="guests" class="form-label">Number of Guests</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-friends"></i></span>
+                                    <select class="form-select" id="guests" name="guests" required>
+                                        {% for i in "123456" %}
+                                            <option value="{{ forloop.counter }}" {% if room and forloop.counter > room.capacity %}disabled{% endif %}>
+                                                {{ forloop.counter }} {% if forloop.counter == 1 %}Guest{% else %}Guests{% endif %}
+                                                {% if room and forloop.counter > room.capacity %} (exceeds capacity){% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="special_requests" class="form-label">Special Requests (optional)</label>
+                                <textarea id="special_requests" name="special_requests" class="form-control" rows="3" placeholder="Any special requests or preferences?"></textarea>
+                                <div class="form-text">Special requests cannot be guaranteed but we will do our best to accommodate them.</div>
                             </div>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary w-100">Confirm Booking</button>
+                        <div class="mt-4">
+                            <div class="guarantee-badge">
+                                <i class="fas fa-shield-alt"></i> Best Price Guarantee
+                            </div>
+                            <div class="guarantee-badge">
+                                <i class="fas fa-calendar-times"></i> Free Cancellation
+                            </div>
+                            <div class="guarantee-badge">
+                                <i class="fas fa-credit-card"></i> No Booking Fees
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
+                            <i class="fas fa-check-circle me-1"></i> Confirm Booking
+                        </button>
                     </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <!-- Price calculation card -->
+            <div class="card booking-summary">
+                <div class="card-body">
+                    <h3 class="h5 mb-4">Price Summary</h3>
+                    
+                    <div class="booking-details-row">
+                        <div class="booking-details-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="booking-details-content">
+                            <div class="booking-details-label">Hotel</div>
+                            <div class="booking-details-value">{{ hotel.name }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-details-row">
+                        <div class="booking-details-icon">
+                            <i class="fas fa-bed"></i>
+                        </div>
+                        <div class="booking-details-content">
+                            <div class="booking-details-label">Room Type</div>
+                            <div class="booking-details-value">
+                                {% if room %}{{ room.name }} ({{ room.get_room_type_display }}){% else %}Standard Room{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-details-row">
+                        <div class="booking-details-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="booking-details-content">
+                            <div class="booking-details-label">Stay Duration</div>
+                            <div class="booking-details-value" id="nights-display">
+                                Select dates to see duration
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-details-row">
+                        <div class="booking-details-icon">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <div class="booking-details-content">
+                            <div class="booking-details-label">Guests</div>
+                            <div class="booking-details-value" id="guests-display">1</div>
+                        </div>
+                    </div>
+                    
+                    <div class="price-breakdown">
+                        <div class="price-row">
+                            <span>Price per night:</span>
+                            <span>${{ room.price_per_night|default:hotel.price_per_night }}</span>
+                        </div>
+                        <div class="price-row" id="nights-row">
+                            <span>Nights:</span>
+                            <span>0</span>
+                        </div>
+                        <div class="price-row">
+                            <span>Taxes & Fees (12%):</span>
+                            <span id="taxes">$0.00</span>
+                        </div>
+                        <div class="price-row total">
+                            <span>Total:</span>
+                            <span id="total-price">$0.00</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -84,7 +314,11 @@
         const checkInInput = document.getElementById('check_in');
         const checkOutInput = document.getElementById('check_out');
         const nightsRow = document.getElementById('nights-row');
+        const nightsDisplay = document.getElementById('nights-display');
         const totalPrice = document.getElementById('total-price');
+        const taxesDisplay = document.getElementById('taxes');
+        const guestsInput = document.getElementById('guests');
+        const guestsDisplay = document.getElementById('guests-display');
         const pricePerNight = {{ room.price_per_night|default:hotel.price_per_night }};
         
         // Set minimum dates
@@ -101,12 +335,19 @@
                 const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
                 
                 if (nights > 0) {
-                    const total = nights * pricePerNight;
-                    nightsRow.innerHTML = `<span>Nights (${nights}):</span><span>$${pricePerNight} × ${nights}</span>`;
+                    const subtotal = nights * pricePerNight;
+                    const taxes = subtotal * 0.12; // 12% tax
+                    const total = subtotal + taxes;
+                    
+                    nightsRow.innerHTML = `<span>Nights (${nights}):</span><span>$${pricePerNight.toFixed(2)} × ${nights}</span>`;
+                    nightsDisplay.textContent = `${nights} night${nights > 1 ? 's' : ''}`;
+                    taxesDisplay.textContent = `$${taxes.toFixed(2)}`;
                     totalPrice.textContent = `$${total.toFixed(2)}`;
                 } else {
                     nightsRow.innerHTML = `<span>Nights:</span><span>0</span>`;
-                    totalPrice.textContent = '$0.00';
+                    nightsDisplay.textContent = `Select dates to see duration`;
+                    taxesDisplay.textContent = `$0.00`;
+                    totalPrice.textContent = `$0.00`;
                 }
             }
         }
@@ -127,6 +368,10 @@
         });
         
         checkOutInput.addEventListener('change', updatePrice);
+        
+        guestsInput.addEventListener('change', function() {
+            guestsDisplay.textContent = this.value;
+        });
     });
 </script>
 {% endblock %}

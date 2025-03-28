@@ -9,6 +9,8 @@ from django.http import HttpResponse
 from django.conf import settings
 from .models import Booking, Review
 from hotels.models import Hotel, Room
+from .review_api import ReviewAPI
+
 
 @login_required
 def booking_list(request):
@@ -70,72 +72,129 @@ def generate_booking_pdf(request, booking_id):
     """Generate PDF for booking"""
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
     
-    # Prepare data for PDF Generator API
-    pdf_data = {
-        "dynamicData": {
-            "heading": "Booking Confirmation",
-            "sections": ["Details", "Summary"],
-            "Details": {
-                "Booking ID": booking.id,
-                "Hotel": booking.hotel.name,
-                "Room": f"{booking.room.name} ({booking.room.get_room_type_display()})",
-                "Check-In": booking.check_in.strftime("%Y-%m-%d"),
-                "Check-Out": booking.check_out.strftime("%Y-%m-%d"),
-                "Guests": booking.guests,
-                "Total Price": f"${booking.total_price}",
-                "Status": booking.get_status_display()
-            },
-            "Summary": {
-                "Transaction ID": f"TXN{booking.id}",
-                "Payment Method": "Credit Card",
-                "Booking Source": "Website",
-                "Additional Notes": "Thank you for your reservation!"
-            }
-        }
-    }
-    
-    # Add email if requested
-    if request.GET.get('email') == 'true' and request.user.email:
-        pdf_data['email'] = request.user.email
-    
-    try:
-        # Call the PDF Generator API
-        response = requests.post(
-            "https://r9jwjvpgca.execute-api.us-east-1.amazonaws.com/dev/api/utils/pdf/generatePdf",
-            json=pdf_data,
-            headers={'Content-Type': 'application/json'}
-        )
+    # Check if it's an email request with custom email dialog
+    if request.method == 'POST' and 'email' in request.POST:
+        email_address = request.POST.get('email_address', request.user.email)
         
-        if response.status_code == 200:
-            result = response.json()
+        # Prepare data for PDF Generator API
+        pdf_data = {
+            "dynamicData": {
+                "heading": "Booking Confirmation",
+                "sections": ["Details", "Summary"],
+                "Details": {
+                    "Booking ID": booking.id,
+                    "Hotel": booking.hotel.name,
+                    "Room": f"{booking.room.name} ({booking.room.get_room_type_display()})" if booking.room else "Standard Room",
+                    "Check-In": booking.check_in.strftime("%Y-%m-%d"),
+                    "Check-Out": booking.check_out.strftime("%Y-%m-%d"),
+                    "Guests": booking.guests,
+                    "Total Price": f"${booking.total_price}",
+                    "Status": booking.get_status_display()
+                },
+                "Summary": {
+                    "Transaction ID": f"TXN{booking.id}",
+                    "Payment Method": "Credit Card",
+                    "Booking Source": "Website",
+                    "Additional Notes": "Thank you for your reservation!"
+                }
+            },
+            "email": email_address
+        }
+        
+        try:
+            # Call the PDF Generator API
+            response = requests.post(
+                "https://r9jwjvpgca.execute-api.us-east-1.amazonaws.com/dev/api/utils/pdf/generatePdf",
+                json=pdf_data,
+                headers={'Content-Type': 'application/json'}
+            )
             
-            # Update booking with invoice ID
-            if not booking.invoice_id:
-                booking.invoice_id = f"INV-{uuid.uuid4().hex[:8].upper()}"
-                booking.pdf_generated = True
-                booking.save()
-            
-            # If download requested
-            if request.GET.get('download') == 'true':
-                pdf_file = result.get('data', {}).get('file')
+            if response.status_code == 200:
+                result = response.json()
                 
-                if pdf_file:
-                    # Decode base64 PDF data
-                    pdf_bytes = base64.b64decode(pdf_file)
-                    
-                    # Create response with PDF content
-                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
-                    response['Content-Disposition'] = f'attachment; filename="booking_{booking_id}.pdf"'
-                    return response
+                # Update booking with invoice ID if not already set
+                if not booking.invoice_id:
+                    booking.invoice_id = f"INV-{uuid.uuid4().hex[:8].upper()}"
+                    booking.pdf_generated = True
+                    booking.save()
+                
+                messages.success(request, f'PDF has been sent to {email_address}')
+            else:
+                messages.error(request, f'Error generating PDF: {response.text}')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
             
-            messages.success(request, 'PDF generated successfully')
-            return redirect('booking_confirmation', booking_id=booking.id)
-        else:
-            messages.error(request, f'Error generating PDF: {response.text}')
-            return redirect('booking_confirmation', booking_id=booking.id)
-    except Exception as e:
-        messages.error(request, f'Error: {str(e)}')
         return redirect('booking_confirmation', booking_id=booking.id)
+            
+    # Standard GET method handling for direct download or showing email form
+    elif request.method == 'GET':
+        if request.GET.get('download') == 'true':
+            # Handle direct download
+            pdf_data = {
+                "dynamicData": {
+                    "heading": "Booking Confirmation",
+                    "sections": ["Details", "Summary"],
+                    "Details": {
+                        "Booking ID": booking.id,
+                        "Hotel": booking.hotel.name,
+                        "Room": f"{booking.room.name} ({booking.room.get_room_type_display()})" if booking.room else "Standard Room",
+                        "Check-In": booking.check_in.strftime("%Y-%m-%d"),
+                        "Check-Out": booking.check_out.strftime("%Y-%m-%d"),
+                        "Guests": booking.guests,
+                        "Total Price": f"${booking.total_price}",
+                        "Status": booking.get_status_display()
+                    },
+                    "Summary": {
+                        "Transaction ID": f"TXN{booking.id}",
+                        "Payment Method": "Credit Card",
+                        "Booking Source": "Website",
+                        "Additional Notes": "Thank you for your reservation!"
+                    }
+                }
+            }
+            
+            try:
+                # Call the PDF Generator API
+                response = requests.post(
+                    "https://r9jwjvpgca.execute-api.us-east-1.amazonaws.com/dev/api/utils/pdf/generatePdf",
+                    json=pdf_data,
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Update booking with invoice ID
+                    if not booking.invoice_id:
+                        booking.invoice_id = f"INV-{uuid.uuid4().hex[:8].upper()}"
+                        booking.pdf_generated = True
+                        booking.save()
+                    
+                    # Decode base64 PDF data
+                    pdf_file = result.get('data', {}).get('file')
+                    if pdf_file:
+                        pdf_bytes = base64.b64decode(pdf_file)
+                        
+                        # Create response with PDF content
+                        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                        response['Content-Disposition'] = f'attachment; filename="booking_{booking_id}.pdf"'
+                        return response
+                else:
+                    messages.error(request, f'Error generating PDF: {response.text}')
+            except Exception as e:
+                messages.error(request, f'Error: {str(e)}')
+                
+            return redirect('booking_confirmation', booking_id=booking.id)
+            
+        elif request.GET.get('email') == 'true':
+            # Show email form instead of sending directly
+            return render(request, 'bookings/email_pdf_form.html', {
+                'booking': booking,
+                'default_email': request.user.email
+            })
+    
+    # Default fallback
+    return redirect('booking_confirmation', booking_id=booking.id)
 
 def submit_review(request, hotel_id):
     """Handle review submission"""
@@ -151,60 +210,26 @@ def submit_review(request, hotel_id):
             messages.error(request, 'Both rating and comment are required.')
             return redirect('hotel_detail', hotel_id=hotel_id)
         
-        # Prepare review data for external API
-        review_data = {
-            "review": {
-                "name": request.user.username,
-                "rating": int(rating),
-                "comment": comment,
-                "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-            }
-        }
+        # Check if user already has a review for this hotel
+        existing_review = Review.objects.filter(hotel_id=hotel_id, user=request.user).first()
         
-        try:
-            # Submit to Review Token API
-            response = requests.post(
-                "https://wxqzannoi7.execute-api.us-east-1.amazonaws.com/dev/generate-review-token",
-                json=review_data,
-                headers={'Content-Type': 'application/json'}
+        if existing_review:
+            # Update existing review
+            existing_review.rating = int(rating)
+            existing_review.comment = comment
+            existing_review.sentiment = existing_review.get_sentiment()
+            existing_review.save()
+            messages.success(request, 'Your review has been updated successfully!')
+        else:
+            # Create new review with basic sentiment
+            new_review = Review(
+                hotel_id=hotel_id,
+                user=request.user,
+                rating=int(rating),
+                comment=comment
             )
-            
-            if response.ok:
-                review_result = response.json()
-                
-                # Extract data from response
-                review_token = review_result.get('review_token')
-                review_id = review_result.get('review_id')
-                sentiment = review_result.get('sentiment', {}).get('label', 'neutral')
-                
-                # Save review to our database
-                Review.objects.create(
-                    hotel_id=hotel_id,
-                    user=request.user,
-                    rating=int(rating),
-                    comment=comment,
-                    sentiment=sentiment,
-                    review_token=review_token,
-                    review_id=review_id
-                )
-                
-                messages.success(request, 'Your review has been submitted successfully!')
-            else:
-                # Basic sentiment analysis if API fails
-                sentiment = 'positive' if int(rating) >= 4 else ('negative' if int(rating) <= 2 else 'neutral')
-                
-                # Save review with basic sentiment
-                Review.objects.create(
-                    hotel_id=hotel_id,
-                    user=request.user,
-                    rating=int(rating),
-                    comment=comment,
-                    sentiment=sentiment
-                )
-                
-                messages.success(request, 'Your review has been submitted, but the sentiment analysis service is temporarily unavailable.')
-        
-        except Exception as e:
-            messages.error(request, f'Error submitting review: {str(e)}')
+            new_review.sentiment = new_review.get_sentiment()
+            new_review.save()
+            messages.success(request, 'Your review has been submitted successfully!')
         
     return redirect('hotel_detail', hotel_id=hotel_id)

@@ -5,12 +5,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-your-secret-key-here'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-your-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -59,6 +59,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'hotel_project.wsgi.application'
 
 # Database
+# Use SQLite for development, but can be configured for RDS in production
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -82,7 +83,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'staticfiles')] if os.path.exists(os.path.join(BASE_DIR, 'staticfiles')) else []
 
 # Media files
 MEDIA_URL = '/media/'
@@ -95,7 +97,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Google Maps API key
-GOOGLE_MAPS_API_KEY = 'AIzaSyAtX02OJOKyVBmE3QV45Pm8qQKkHGlZ0xQ'
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyAtX02OJOKyVBmE3QV45Pm8qQKkHGlZ0xQ')
 
 # Rest Framework settings
 REST_FRAMEWORK = {

@@ -1,70 +1,138 @@
 {% extends 'base.html' %}
 
-{% block title %}Welcome to HotelHub{% endblock %}
+{% block title %}HotelHub - Find Your Perfect Stay{% endblock %}
 
 {% block content %}
-<div class="bg-primary text-white py-5 mb-4">
-    <div class="container text-center">
-        <h1 class="display-4">Find Your Perfect Stay</h1>
-        <p class="lead">Book hotels at the best prices with HotelHub</p>
+<!-- Hero Section -->
+<div class="hero" style="background: linear-gradient(rgba(44, 62, 80, 0.7), rgba(44, 62, 80, 0.7)), url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1760&q=80'); background-size: cover; background-position: center; height: 500px; display: flex; align-items: center;">
+    <div class="container text-center text-white">
+        <h1 class="display-4 fw-bold mb-4">Discover Your Perfect Stay</h1>
+        <p class="lead mb-5">Find the best hotels at the most competitive prices with HotelHub</p>
+        <a href="#search-form" class="btn btn-lg btn-primary">
+            <i class="fas fa-search me-2"></i>Find Hotels
+        </a>
     </div>
 </div>
 
-<div class="container">
-    <!-- Search Form -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" action="{% url 'hotel_list' %}">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="location" class="form-label">Where do you want to stay?</label>
+<!-- Search Section -->
+<div class="container my-5">
+    <div class="search-form" id="search-form">
+        <h2 class="section-heading mb-4">Search Hotels</h2>
+        <form method="get" action="{% url 'hotel_list' %}">
+            <div class="row g-3">
+                <div class="col-md-5 mb-3">
+                    <label for="location" class="form-label">Where do you want to stay?</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                         <input type="text" class="form-control" id="location" name="location" placeholder="City, address, or landmark">
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="check_in" class="form-label">Check-in</label>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="check_in" class="form-label">Check-in</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
                         <input type="date" class="form-control" id="check_in" name="check_in">
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="check_out" class="form-label">Check-out</label>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="check_out" class="form-label">Check-out</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
                         <input type="date" class="form-control" id="check_out" name="check_out">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Search Hotels</button>
-            </form>
-        </div>
+                <div class="col-md-1 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary h-100 w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 
     <!-- Featured Hotels -->
-    <h2 class="text-center mb-4">Featured Hotels</h2>
-    <div class="row">
-        {% for hotel in featured_hotels %}
-        <div class="col-md-4 mb-4">
-            <div class="card hotel-card h-100">
-                {% if hotel.image %}
-                    <img src="{{ hotel.image.url }}" class="card-img-top" alt="{{ hotel.name }}">
-                {% else %}
-                    <div class="bg-light text-center p-5 card-img-top">No Image Available</div>
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ hotel.name }}</h5>
-                    <p class="card-text text-truncate">{{ hotel.address }}</p>
-                    <p class="card-text fw-bold">${{ hotel.price_per_night }} per night</p>
-                    <a href="{% url 'hotel_detail' hotel.id %}" class="btn btn-primary">View Details</a>
+    <div class="my-5">
+        <h2 class="section-heading mb-4">Featured Hotels</h2>
+        <div class="row g-4">
+            {% for hotel in featured_hotels %}
+            <div class="col-md-4 mb-4">
+                <div class="card hotel-card h-100">
+                    {% if hotel.image %}
+                        <img src="{{ hotel.image.url }}" class="card-img-top" alt="{{ hotel.name }}">
+                    {% else %}
+                        <div class="bg-light text-center p-5 card-img-top">
+                            <i class="fas fa-hotel fa-3x text-secondary"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ hotel.name }}</h5>
+                        <p class="location">
+                            <i class="fas fa-map-marker-alt"></i> {{ hotel.address }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p class="hotel-price mb-0">${{ hotel.price_per_night }} <small>per night</small></p>
+                            <a href="{% url 'hotel_detail' hotel.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-info-circle me-1"></i> Details
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No featured hotels available at the moment.
+                </div>
+            </div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info">No featured hotels available at the moment.</div>
-        </div>
-        {% endfor %}
     </div>
 
-    <!-- Map of Hotels -->
-    <div class="card mt-4 mb-4">
+    <!-- Map Section -->
+    <div class="card mt-5 mb-4">
         <div class="card-body">
-            <h3 class="card-title text-center mb-3">Our Hotels Locations</h3>
-            <div id="map" style="height: 400px; width: 100%;"></div>
+            <h2 class="section-heading mb-4">Our Hotels Locations</h2>
+            <div id="map" style="height: 500px; width: 100%; border-radius: 10px;"></div>
+        </div>
+    </div>
+    
+    <!-- Why Choose Us -->
+    <div class="my-5">
+        <h2 class="section-heading mb-4">Why Choose HotelHub</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-tag fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">Best Price Guarantee</h5>
+                        <p class="card-text">Find a lower price? We'll match it and give you an additional 10% off.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-calendar-check fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">Free Cancellation</h5>
+                        <p class="card-text">Plans change? No problem. Cancel for free up to 24 hours before check-in.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center p-4">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-headset fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">24/7 Customer Support</h5>
+                        <p class="card-text">Our support team is always available to help with any questions or issues.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -95,7 +163,49 @@
     function initMap() {
         const map = new google.maps.Map(document.getElementById('map'), {
             zoom: 10,
-            center: {lat: 0, lng: 0}
+            center: {lat: 0, lng: 0},
+            styles: [
+                {
+                    "featureType": "administrative",
+                    "elementType": "labels.text.fill",
+                    "stylers": [{"color": "#444444"}]
+                },
+                {
+                    "featureType": "landscape",
+                    "elementType": "all",
+                    "stylers": [{"color": "#f2f2f2"}]
+                },
+                {
+                    "featureType": "poi",
+                    "elementType": "all",
+                    "stylers": [{"visibility": "off"}]
+                },
+                {
+                    "featureType": "road",
+                    "elementType": "all",
+                    "stylers": [{"saturation": -100}, {"lightness": 45}]
+                },
+                {
+                    "featureType": "road.highway",
+                    "elementType": "all",
+                    "stylers": [{"visibility": "simplified"}]
+                },
+                {
+                    "featureType": "road.arterial",
+                    "elementType": "labels.icon",
+                    "stylers": [{"visibility": "off"}]
+                },
+                {
+                    "featureType": "transit",
+                    "elementType": "all",
+                    "stylers": [{"visibility": "off"}]
+                },
+                {
+                    "featureType": "water",
+                    "elementType": "all",
+                    "stylers": [{"color": "#3498db"}, {"visibility": "on"}]
+                }
+            ]
         });
         
         const hotels = [
@@ -112,21 +222,54 @@
         
         const bounds = new google.maps.LatLngBounds();
         
-        // Add markers for hotels
+        // Custom marker icon
+        const markerIcon = {
+            path: 'M12,2C8.13,2,5,5.13,5,9c0,5.25,7,13,7,13s7-7.75,7-13C19,5.13,15.87,2,12,2z M12,11.5c-1.38,0-2.5-1.12-2.5-2.5s1.12-2.5,2.5-2.5s2.5,1.12,2.5,2.5S13.38,11.5,12,11.5z',
+            fillColor: '#3498db',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            scale: 1.5,
+            anchor: new google.maps.Point(12, 22)
+        };
+        
         hotels.forEach(hotel => {
             const position = {lat: hotel.lat, lng: hotel.lng};
             const marker = new google.maps.Marker({
                 position: position,
                 map: map,
-                title: hotel.name
+                title: hotel.name,
+                icon: markerIcon,
+                animation: google.maps.Animation.DROP
             });
             
             bounds.extend(position);
             
-            // Add info window
             const infoWindow = new google.maps.InfoWindow({
                 content: `
-                    <div style="width: 200px;">
-                        <h5>${hotel.name}</h5>
-                        <p><strong>$${hotel.price}</strong> per night</p>
-                        <a href="/hotels/${hotel.id}/" class="btn btn-
+                    <div style="width: 200px; padding: 10px;">
+                        <h5 style="margin-top: 0; color: #2c3e50; font-weight: bold;">${hotel.name}</h5>
+                        <p style="margin-bottom: 8px;"><strong style="color: #3498db;">$${hotel.price}</strong> per night</p>
+                        <a href="/hotels/${hotel.id}/" 
+                           style="background-color: #3498db; color: white; text-decoration: none; padding: 5px 10px; border-radius: 4px; display: inline-block;">View Details</a>
+                    </div>
+                `
+            });
+            
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+        });
+        
+        if (hotels.length > 0) {
+            map.fitBounds(bounds);
+        }
+    }
+</script>
+
+<!-- Load Google Maps API -->
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
+</script>
+{% endblock %}
+{% endblock content %}

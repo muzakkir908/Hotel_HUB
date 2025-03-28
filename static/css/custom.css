@@ -1,0 +1,22 @@
+/* Custom styles for HotelHub */
+.hotel-card {
+    transition: transform 0.3s;
+    height: 100%;
+}
+.hotel-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.hotel-card img {
+    height: 200px;
+    object-fit: cover;
+}
+.star-rating {
+    color: #ffc107;
+}
+.review-card {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}

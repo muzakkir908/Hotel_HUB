@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+
+{% block title %}My Bookings - HotelHub{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    
+    .booking-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .hotel-img {
+        height: 180px;
+        object-fit: cover;
+    }
+    
+    .booking-meta {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .booking-id {
+        background-color: #f8f9fa;
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 0.8rem;
+        margin-right: 10px;
+    }
+    
+    .booking-dates {
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .booking-status {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .status-confirmed {
+        background-color: rgba(46, 204, 113, 0.15);
+        color: #2ecc71;
+    }
+    
+    .status-pending {
+        background-color: rgba(243, 156, 18, 0.15);
+        color: #f39c12;
+    }
+    
+    .status-cancelled {
+        background-color: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+    
+    .booking-actions {
+        margin-top: auto;
+    }
+    
+    .booking-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .booking-price {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--primary-color);
+    }
+    
+    .booking-filters {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .booking-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: 180px;
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .stat-upcoming {
+        background-color: rgba(52, 152, 219, 0.1);
+        color: #3498db;
+    }
+    
+    .stat-completed {
+        background-color: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+    }
+    
+    .stat-total {
+        background-color: rgba(155, 89, 182, 0.1);
+        color: #9b59b6;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .no-bookings {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .no-bookings-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">My Bookings</h1>
+        <a href="{% url 'hotel_list' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> New Booking
+        </a>
+    </div>
+    
+    {% if bookings %}
+        <!-- Booking Statistics -->
+        <div class="booking-stats">
+            <div class="stat-card">
+                <div class="stat-icon stat-upcoming">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-value">
+                    {% with upcoming_count=bookings|length %}
+                        {{ upcoming_count }}
+                    {% endwith %}
+                </div>
+                <div class="stat-label">Upcoming Stays</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon stat-completed">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value">0</div>
+                <div class="stat-label">Completed Stays</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon stat-total">
+                    <i class="fas fa-suitcase"></i>
+                </div>
+                <div class="stat-value">{{ bookings|length }}</div>
+                <div class="stat-label">Total Bookings</div>
+            </div>
+        </div>
+        
+        <!-- Booking Filters -->
+        <div class="booking-filters">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="statusFilter" class="form-label">Filter by Status</label>
+                    <select id="statusFilter" class="form-select">
+                        <option value="all">All Bookings</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="sortFilter" class="form-label">Sort by</label>
+                    <select id="sortFilter" class="form-select">
+                        <option value="date-desc">Date (Newest First)</option>
+                        <option value="date-asc">Date (Oldest First)</option>
+                        <option value="price-desc">Price (Highest First)</option>
+                        <option value="price-asc">Price (Lowest First)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="searchBooking" class="form-label">Search Bookings</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchBooking" placeholder="Hotel name or booking ID">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Booking Listings -->
+        <div class="row">
+            {% for booking in bookings %}
+            <div class="col-md-6 col-lg-4 booking-item" data-status="{{ booking.status }}">
+                <div class="card booking-card">
+                    {% if booking.hotel.image %}
+                        <img src="{{ booking.hotel.image.url }}" class="card-img-top hotel-img" alt="{{ booking.hotel.name }}">
+                    {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center hotel-img">
+                            <i class="fas fa-hotel fa-3x text-secondary"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <div class="booking-meta">
+                            <span class="booking-id">ID: {{ booking.id }}</span>
+                            <span class="booking-status status-{{ booking.status }}">
+                                <i class="fas {% if booking.status == 'confirmed' %}fa-check-circle{% elif booking.status == 'pending' %}fa-clock{% elif booking.status == 'cancelled' %}fa-times-circle{% endif %} me-1"></i>
+                                {{ booking.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <h5 class="card-title">{{ booking.hotel.name }}</h5>
+                        
+                        <p class="booking-dates">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            {{ booking.check_in|date:"M d, Y" }} - {{ booking.check_out|date:"M d, Y" }}
+                        </p>
+                        
+                        <p class="card-text mb-2">
+                            <i class="fas fa-bed me-2"></i>
+                            {% if booking.room %}
+                                {{ booking.room.name }} ({{ booking.room.get_room_type_display }})
+                            {% else %}
+                                Standard Room
+                            {% endif %}
+                        </p>
+                        
+                        <p class="card-text mb-3">
+                            <i class="fas fa-user-friends me-2"></i>
+                            {{ booking.guests }} guest{{ booking.guests|pluralize }}
+                        </p>
+                        
+                        <div class="booking-bottom mt-auto">
+                            <div class="booking-price">${{ booking.total_price }}</div>
+                            
+                            <div class="booking-actions">
+                                <a href="{% url 'booking_confirmation' booking.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+                                <a href="{% url 'generate_booking_pdf' booking.id %}?download=true" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- No Bookings State -->
+        <div class="no-bookings">
+            <div class="no-bookings-icon">
+                <i class="fas fa-suitcase"></i>
+            </div>
+            <h2 class="h4 mb-3">No bookings yet!</h2>
+            <p class="mb-4">You haven't made any hotel bookings yet. Start exploring our hotels to make your first reservation.</p>
+            <a href="{% url 'hotel_list' %}" class="btn btn-primary">
+                <i class="fas fa-search me-1"></i> Browse Hotels
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusFilter = document.getElementById('statusFilter');
+        const sortFilter = document.getElementById('sortFilter');
+        const searchInput = document.getElementById('searchBooking');
+        const bookingItems = document.querySelectorAll('.booking-item');
+        
+        // Status filtering
+        statusFilter.addEventListener('change', function() {
+            const selectedStatus = this.value;
+            
+            bookingItems.forEach(item => {
+                if (selectedStatus === 'all' || item.dataset.status === selectedStatus) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Sorting
+        sortFilter.addEventListener('change', function() {
+            const selectedSort = this.value;
+            const bookingsList = document.querySelector('.row');
+            const bookingsArray = Array.from(bookingItems);
+            
+            bookingsArray.sort((a, b) => {
+                const priceA = parseFloat(a.querySelector('.booking-price').textContent.replace('$', ''));
+                const priceB = parseFloat(b.querySelector('.booking-price').textContent.replace('$', ''));
+                const dateA = new Date(a.querySelector('.booking-dates').textContent.split(' - ')[0].trim());
+                const dateB = new Date(b.querySelector('.booking-dates').textContent.split(' - ')[0].trim());
+                
+                if (selectedSort === 'price-desc') {
+                    return priceB - priceA;
+                } else if (selectedSort === 'price-asc') {
+                    return priceA - priceB;
+                } else if (selectedSort === 'date-desc') {
+                    return dateB - dateA;
+                } else if (selectedSort === 'date-asc') {
+                    return dateA - dateB;
+                }
+                
+                return 0;
+            });
+            
+            bookingsArray.forEach(item => {
+                bookingsList.appendChild(item);
+            });
+        });
+        
+        // Search functionality
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            
+            bookingItems.forEach(item => {
+                const hotelName = item.querySelector('.card-title').textContent.toLowerCase();
+                const bookingId = item.querySelector('.booking-id').textContent.toLowerCase();
+                
+                if (hotelName.includes(searchText) || bookingId.includes(searchText)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
