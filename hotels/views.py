@@ -5,6 +5,7 @@ from django.db.models import Avg
 
 def home(request):
     """Home page with featured hotels"""
+    print("HOME VIEW CALLED")
     featured_hotels = Hotel.objects.all()[:6]
     return render(request, 'home.html', {
         'featured_hotels': featured_hotels
