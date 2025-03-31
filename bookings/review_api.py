@@ -27,7 +27,11 @@ class ReviewAPI:
                 response = requests.post(endpoint, json=review_data, headers=headers)
                 
                 if response.ok:
-                    return True, response.json()
+                    result = response.json()
+                    # Handle the new response structure
+                    if result.get('message') == 'Token generated successfully' and result.get('data'):
+                        return True, result.get('data')
+                    return True, result
                 elif response.status_code >= 500:  # Server error
                     if attempt < max_retries:
                         # Exponential backoff

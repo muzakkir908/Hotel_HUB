@@ -116,6 +116,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.vfs.cloud9.eu-west-1.amazonaws.com',
+    'https://*.elasticbeanstalk.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 # Google Maps API key
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyAtX02OJOKyVBmE3QV45Pm8qQKkHGlZ0xQ')
 

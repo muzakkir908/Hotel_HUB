@@ -213,23 +213,81 @@ def submit_review(request, hotel_id):
         # Check if user already has a review for this hotel
         existing_review = Review.objects.filter(hotel_id=hotel_id, user=request.user).first()
         
-        if existing_review:
-            # Update existing review
-            existing_review.rating = int(rating)
-            existing_review.comment = comment
-            existing_review.sentiment = existing_review.get_sentiment()
-            existing_review.save()
-            messages.success(request, 'Your review has been updated successfully!')
-        else:
-            # Create new review with basic sentiment
-            new_review = Review(
-                hotel_id=hotel_id,
-                user=request.user,
-                rating=int(rating),
-                comment=comment
-            )
-            new_review.sentiment = new_review.get_sentiment()
-            new_review.save()
-            messages.success(request, 'Your review has been submitted successfully!')
+        try:
+            # Try to use the API for sentiment analysis
+            review_data = {
+                "name": request.user.username,
+                "rating": float(rating),
+                "comment": comment,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            success, result = ReviewAPI.generate_review_token(review_data)
+            
+            if success and result:
+                # Extract sentiment from new API response structure
+                sentiment_data = result.get('sentiment', {})
+                sentiment_label = sentiment_data.get('label', 'neutral')
+                
+                if existing_review:
+                    # Update existing review
+                    existing_review.rating = int(rating)
+                    existing_review.comment = comment
+                    existing_review.sentiment = sentiment_label
+                    existing_review.save()
+                    messages.success(request, 'Your review has been updated successfully!')
+                else:
+                    # Create new review with API sentiment
+                    new_review = Review(
+                        hotel_id=hotel_id,
+                        user=request.user,
+                        rating=int(rating),
+                        comment=comment,
+                        sentiment=sentiment_label
+                    )
+                    new_review.save()
+                    messages.success(request, 'Your review has been submitted successfully!')
+            else:
+                # Fallback to local sentiment analysis
+                if existing_review:
+                    # Update existing review
+                    existing_review.rating = int(rating)
+                    existing_review.comment = comment
+                    existing_review.sentiment = existing_review.get_sentiment()
+                    existing_review.save()
+                    messages.success(request, 'Your review has been updated successfully!')
+                else:
+                    # Create new review with basic sentiment
+                    new_review = Review(
+                        hotel_id=hotel_id,
+                        user=request.user,
+                        rating=int(rating),
+                        comment=comment
+                    )
+                    new_review.sentiment = new_review.get_sentiment()
+                    new_review.save()
+                    messages.success(request, 'Your review has been submitted successfully!')
+        except Exception as e:
+            # Log the error and proceed with local sentiment analysis
+            print(f"Error with sentiment API: {str(e)}")
+            
+            if existing_review:
+                # Update existing review
+                existing_review.rating = int(rating)
+                existing_review.comment = comment
+                existing_review.sentiment = existing_review.get_sentiment()
+                existing_review.save()
+                messages.success(request, 'Your review has been updated successfully!')
+            else:
+                # Create new review with basic sentiment
+                new_review = Review(
+                    hotel_id=hotel_id,
+                    user=request.user,
+                    rating=int(rating),
+                    comment=comment
+                )
+                new_review.sentiment = new_review.get_sentiment()
+                new_review.save()
+                messages.success(request, 'Your review has been submitted successfully!')
         
     return redirect('hotel_detail', hotel_id=hotel_id)
