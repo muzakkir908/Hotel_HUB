@@ -4,5 +4,9 @@
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 
+# Virtual environments
+venv/
+.venv/
+
 # Local secrets
 .env
