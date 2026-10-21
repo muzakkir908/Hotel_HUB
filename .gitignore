@@ -7,3 +7,6 @@
 # Virtual environments
 venv/
 .venv/
+
+# Local secrets
+.env
