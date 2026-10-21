@@ -124,7 +124,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Google Maps API key
-GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyAtX02OJOKyVBmE3QV45Pm8qQKkHGlZ0xQ')
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 
 # Rest Framework settings
 REST_FRAMEWORK = {
